@@ -19,18 +19,23 @@
     { k: 'kure-oyun', oyun: 'Küre', ad: 'Oyna', ikon: '▶', tur: 'kure' },
     { k: 'satranc-tahta', oyun: 'Satranç', ad: 'Arkadaşınla oyna', ikon: '♞', tur: 'satranc' },
     ...V.satranc.map((s, i) => ({ k: 'satranc-' + (i + 1), oyun: 'Satranç', ad: `${i + 1}. ${s.ad}`, ikon: '♟', tur: 'bulmaca', veri: 'satranc', konular: [i] }))];
+  const YARIS_MOD = ['duello', 'bulmaca-duello', 'turnuva', 'siralama'];
   let ogr = oku('ogrenci'), acik = new Set(oku('moduller', []));
+  const yarisKur = () => window.YARIS_KUR({ sunucu, $, esc, T, M, V, ogr, DEMO, bulmaca, KATALOG, acikMi: (k) => acik.has(k) });
 
   // ---------- sunucu ----------
   async function sunucu(govde) {
     if (DEMO) return demoSunucu(govde);
+    if (ogr && !govde.jeton) govde = { ...govde, jeton: ogr.jeton };
     const y = await fetch(API, { method: 'POST', body: JSON.stringify(govde), headers: { 'Content-Type': 'text/plain;charset=utf-8' } });
     return y.json();
   }
   function demoSunucu(q) { // yalnız localhost: deneme hesabı
-    if (q.islem === 'giris') return q.kod === '1234' ? { ok: true, ad: q.ad || 'Deneme Öğrenci', jeton: 'demo', moduller: KATALOG.map((x) => x.k) } : { ok: false, hata: 'Deneme kodu 1234' };
-    return { ok: true, ad: ogr && ogr.ad, moduller: KATALOG.map((x) => x.k) };
+    if (q.islem === 'giris') return q.kod === '1234' ? { ok: true, ad: q.ad || 'Deneme Öğrenci', jeton: 'demo', moduller: [...KATALOG.map((x) => x.k), ...YARIS_MOD] } : { ok: false, hata: 'Deneme kodu 1234' };
+    if (q.islem !== 'durum') { demoYaris = demoYaris || window.DEMO_SUNUCU_KUR({ M, ogrAd: () => ogr.ad, yaris: yarisKur() }); return demoYaris(q); }
+    return { ok: true, ad: ogr && ogr.ad, moduller: [...KATALOG.map((x) => x.k), ...YARIS_MOD] };
   }
+  let demoYaris = null;
   async function yenile() {
     if (!ogr) return;
     try { const c = await sunucu({ islem: 'durum', jeton: ogr.jeton });
@@ -68,23 +73,25 @@
   function ana() {
     $('#ust').hidden = false; $('#ustAd').textContent = ogr.ad;
     const gruplar = ['Pentago', 'Küre', 'Satranç'];
+    const yAcik = YARIS_MOD.some((k) => acik.has(k));
     $('#sahne').innerHTML = `<div class="selam"><h2>Merhaba ${esc(ogr.ad.split(' ')[0])}! 👋</h2><p>Bugün hangi oyunu çalışmak istersin?</p></div>
+      <a class="yaris-bant ${yAcik ? '' : 'kilit'}" ${yAcik ? 'href="#yaris"' : ''}><span>${yAcik ? '⚔🏆' : '🔒'}</span><div><b>Yarış: düello ve turnuva</b><small>${yAcik ? 'Arkadaşlarınla canlı düello, bulmaca düellosu, turnuvalar ve sıralama' : 'Öğretmenin açınca gelecek'}</small></div></a>
       ${gruplar.map((g) => `<h3 class="grup g-${g === 'Küre' ? 'kure' : g === 'Satranç' ? 'satranc' : 'pentago'}">${g}</h3><div class="kartlar">${KATALOG.filter((m) => m.oyun === g).map((m) => { const a = acik.has(m.k), p = ilerleme(m);
         return `<a class="mkart ${a ? '' : 'kilit'}" ${a ? `href="#m/${m.k}"` : ''}><span class="ik">${a ? m.ikon : '🔒'}</span><b>${esc(m.ad)}</b>${a ? (p ? `<span class="cubuk"><i style="width:${Math.round(100 * p[0] / p[1])}%"></i></span><small>${p[0]}/${p[1]} soru</small>` : '<small>Hemen oyna</small>') : '<small>Öğretmenin açınca gelecek</small>'}</a>`; }).join('')}</div>`).join('')}`;
   }
 
   // ---------- bulmaca ----------
-  function bulmaca(m) {
+  function bulmaca(m, ozel) {
     const C = oku('cozulen', {}), havuz = m.konular.flatMap((i) => V[m.veri][i].s.map((q, j) => ({ q, id: `${m.veri}-${i}`, j, konu: V[m.veri][i] })));
     const kalan = havuz.filter((x) => !(C[x.id] || []).includes(x.j)), kaynak = kalan.length >= 10 ? kalan : havuz;
-    const set = kaynak.sort(() => Math.random() - .5).slice(0, 10); let i = 0, dogru = 0, hata = 0;
+    const set = ozel ? ozel.set : kaynak.sort(() => Math.random() - .5).slice(0, 10); let i = 0, dogru = 0, hata = 0;
     function ciz() {
       const { q, konu } = set[i], d = q.d; hata = 0;
       let tah = '';
       if (q.f) tah = T.satranc(q.f, { yildiz: q.y, vurgu: q.v, dokun: !!d.kare });
       else if (q.t2) tah = `<div class="ikili">${T.tabla3(q.t.s)}<span>→</span>${T.tabla3(['...', '...', '...'], { dokun: true })}</div>`;
       else if (q.t) tah = q.t.tur === 'k' ? T.kure(q.t.s, q.t.m, { dokun: !!d.kare }) : T.pentago(q.t.s, q.t.m, { dokun: !!d.kare });
-      $('#sahne').innerHTML = `<div class="ust-cubuk"><a class="btn" href="#">‹ Menü</a><span>${esc(m.oyun)} · ${esc(m.ad)}</span><span class="noktalar">${set.map((_, k) => `<i class="${k < i ? 'tamam' : k === i ? 'simdi' : ''}"></i>`).join('')}</span></div>
+      $('#sahne').innerHTML = `<div class="ust-cubuk"><a class="btn" href="${ozel ? '#yaris/bulmaca' : '#'}">‹ ${ozel ? 'Vazgeç' : 'Menü'}</a><span>${ozel ? esc(ozel.baslik) + ' · ' : ''}${esc(m.oyun)} · ${esc(m.ad)}</span><span class="noktalar">${set.map((_, k) => `<i class="${k < i ? 'tamam' : k === i ? 'simdi' : ''}"></i>`).join('')}</span></div>
         <div class="soru ${tah ? '' : 'yazili'}">${tah ? `<div class="soru-tahta">${tah}</div>` : ''}<div class="soru-yan"><small>${esc(konu.ad)}</small><h2>${esc(q.m)}</h2>
           ${(d.alanlar || []).map((a, k) => `<div class="secim" data-g="${k}">${d.alanlar.length > 1 ? `<small>${esc(a.ad)}</small>` : ''}<div>${a.secenek.map((x) => `<button class="btn sec" data-v="${esc(x)}">${esc(x)}</button>`).join('')}</div></div>`).join('')}
           ${d.kare ? `<p class="ipucu">${d.kare.length ? 'Doğru karelere dokun.' : 'Hiçbir taş alınmıyorsa bir yere dokunmadan “Kontrol et”e bas.'}</p>` : ''}
@@ -106,7 +113,7 @@
     const geri = (m, c) => { $('#gb').textContent = m; $('#gb').className = 'geri ' + c; };
     const bitti = () => { $('#kontrol').hidden = true; $('#sonra').hidden = false; };
     function bitir() {
-      kaydet(m.k, dogru, set.length); const y = dogru >= 9 ? 3 : dogru >= 6 ? 2 : dogru >= 3 ? 1 : 0;
+      kaydet(m.k, dogru, set.length); if (ozel) return ozel.bitince(dogru); const y = dogru >= 9 ? 3 : dogru >= 6 ? 2 : dogru >= 3 ? 1 : 0;
       $('#sahne').innerHTML = `<div class="son"><div class="yildiz">${'★'.repeat(y)}${'☆'.repeat(3 - y)}</div><h1>${dogru} / ${set.length}</h1><p>${y === 3 ? 'Muhteşem! Usta gibi çözdün.' : y === 2 ? 'Çok iyi! Biraz daha pratikle 3 yıldız senin.' : 'Güzel deneme! Tekrar çözdükçe güçleneceksin.'}</p>
         <div class="dugmeler"><button class="btn ana" id="tekrar">Yeni 10 soru</button><a class="btn" href="#">Menü</a></div></div>`;
       $('#tekrar').onclick = () => bulmaca(m);
@@ -198,6 +205,7 @@
   function yon() {
     if (!ogr) return giris();
     const h = location.hash.replace(/^#/, ''), [a, k] = h.split('/');
+    if (a === 'yaris') { const [, , b] = h.split('/'); return yarisKur().yon(k, b); }
     if (a === 'm') { const m = KATALOG.find((x) => x.k === k); if (!m || !acik.has(m.k)) { location.hash = ''; return; }
       return m.tur === 'bulmaca' ? bulmaca(m) : m.tur === 'pentago' ? pentagoOyun() : m.tur === 'kure' ? kureOyun() : satrancOyun(); }
     ana();

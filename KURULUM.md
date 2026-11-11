@@ -22,3 +22,11 @@ Yalnızca Çocuk Kulübü öğrencilerinin girebildiği Pentago, Küre ve Satran
 ## 4. Güncelleme
 - Sorular Öğretmen Masası bankalarından gelir: `node araclar/veri-uret.mjs`.
 - Sürüm değişince `sw.js` içindeki SURUM artırılır.
+
+## 5. Yarış: düello, bulmaca düellosu, turnuva, sıralama
+- Modüller sayfasında `duello`, `bulmaca-duello`, `turnuva`, `siralama` satırlarına EVET yaz (kod güncellemesinden sonra **kurulum**'u bir kez daha çalıştır: yeni sayfalar ve satırlar eklenir; mevcut veriye dokunmaz).
+- **Canlı düello:** öğrenci oyun ve rakip seçer (ya da herkese açık bırakır). Başlatan başlar: Pentago siyah, Küre mor, Satranç beyaz. Hamleler Düellolar sayfasına yazılır.
+- **Bulmaca düellosu:** iki öğrenci aynı 10 soruyu çözer; daha çok doğru, eşitlikte daha kısa süre kazanır.
+- **Turnuva:** Turnuvalar sayfasına bir satır yaz: Ad, Oyun (Pentago / Küre / Satranç), Katılımcılar (virgülle; boşsa tüm aktif öğrenciler), Toplam tur. Satırı seç → Akademi → **Seçili turnuvada sonraki turu eşleştir**. İsviçre sistemi: puana göre eşleşir, aynı iki kişi tekrar eşleşmez, tek sayıda oyuncu varsa biri BAY geçer (+1). Galibiyet 1, beraberlik 0,5. Eşitlikte Buchholz (rakiplerin puan toplamı), sonra galibiyet sayısı. Turdaki bütün maçlar bitmeden sonraki tur eşleşmez.
+- **Sıralama:** son 7 günde doğru çözülen bulmaca sayısı.
+- Not: Apps Script ücretsiz kotası ve ~2,5 sn yenileme yüzünden canlı düello sıra tabanlı oyunlar içindir; aynı anda çok sayıda maç olursa yanıtlar birkaç saniye gecikebilir.

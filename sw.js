@@ -1,6 +1,6 @@
 // Çevrim dışı: uygulama kabuğu önbellekte; sunucu (Apps Script) istekleri önbelleğe alınmaz.
-const SURUM = "akademi-v1";
-const KABUK = ["./", "index.html", "app.css", "config.js", "js/motorlar.js", "js/tahtalar.js", "js/app.js", "veri/bankalar.js", "vendor/chess.min.js", "img/logo.png", "img/ikon-192.png", "manifest.webmanifest"];
+const SURUM = "akademi-v2";
+const KABUK = ["./", "index.html", "app.css", "config.js", "js/motorlar.js", "js/tahtalar.js", "js/yaris.js", "js/demo.js", "js/app.js", "veri/bankalar.js", "vendor/chess.min.js", "img/logo.png", "img/ikon-192.png", "manifest.webmanifest"];
 self.addEventListener("install", (e) => { e.waitUntil(caches.open(SURUM).then((c) => c.addAll(KABUK))); self.skipWaiting(); });
 self.addEventListener("activate", (e) => { e.waitUntil(caches.keys().then((ks) => Promise.all(ks.filter((k) => k !== SURUM).map((k) => caches.delete(k))))); self.clients.claim(); });
 self.addEventListener("fetch", (e) => {
