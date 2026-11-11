@@ -55,7 +55,7 @@
       <label>Öğretmen kodu<input name="kod" inputmode="numeric" maxlength="6" required placeholder="4 haneli kod"></label>
       <button class="btn ana">Giriş yap</button><p class="hata" id="gh">${esc(not || '')}</p></form>
       <p class="kucuk">Kodu öğretmenin verir. Hesabın yalnızca bu cihazda açılır.${DEMO ? ' <b>Deneme modu: kod 1234</b>' : ''}</p></div>`;
-    $('#gf').onsubmit = async (e) => { e.preventDefault(); const f = new FormData(e.target), b = e.target.querySelector('button'); b.disabled = true; $('#gh').textContent = 'Kontrol ediliyor…';
+    $('#gf').onsubmit = async (e) => { e.preventDefault(); const f = new FormData(e.target), b = e.target.querySelector('button'); if (!API && !DEMO) { $('#gh').textContent = 'Uygulama kurulum aşamasında. Öğretmenin açtığında giriş yapabileceksin.'; return; } b.disabled = true; $('#gh').textContent = 'Kontrol ediliyor…';
       try { const c = await sunucu({ islem: 'giris', ad: f.get('ad'), tel: f.get('tel'), kod: f.get('kod'), cihaz: cihaz() });
         if (!c.ok) { $('#gh').textContent = c.hata || 'Giriş yapılamadı.'; b.disabled = false; return; }
         ogr = { ad: c.ad, jeton: c.jeton }; sakla('ogrenci', ogr); acik = new Set(c.moduller); sakla('moduller', c.moduller); location.hash = ''; ana();
